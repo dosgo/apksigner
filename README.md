@@ -10,7 +10,7 @@ jks to pkcs12(pfx)
 keytool -v -importkeystore -srckeystore demo.jks -srcstoretype jks -srcstorepass demopwd   -alias xxx -destkeystore demo.pfx -deststoretype pkcs12 -deststorepass demopwd -destkeypass demopwd
  
  
-
+Note that pfx files cannot have two certificates.
 
 
 err=apk.SignApk("xx.apk","demo.pfx","demopwd","xxsigned.apk");
