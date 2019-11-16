@@ -90,18 +90,21 @@ func jksPrivateKey(jksFile string,storePwd string,alias string,keyPwd string)(*r
 
 
 
+
 /*pem read privatekey*/
 func readPrivateKey() (*rsa.PrivateKey,error){
-	block, _ := pem.Decode([]byte(debugCert))
+	block, _ := pem.Decode([]byte(dd))
 	if block == nil {
 		return nil, errors.New("no debug cert")
 	}
-	privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	
 	if err != nil {
 		return nil, err
 	}
-	return privKey,nil;
+	return privKey.(*rsa.PrivateKey),nil;
 }
+
 
 
 
