@@ -4,19 +4,16 @@ This is golang's apksigner tool, source code reference golang.org\x\mobile\cmd\g
 
 # example
 
-jks to pem
+jks to pkcs12(pfx)
 
 
-keytool -v -importkeystore -srckeystore demo.jks -srcstoretype jks -srcstorepass demopwd -destkeystore demo.pfx -deststoretype pkcs12 -deststorepass demopwd -destkeypass demopwd
+keytool -v -importkeystore -srckeystore demo.jks -srcstoretype jks -srcstorepass demopwd   -alias xxx -destkeystore demo.pfx -deststoretype pkcs12 -deststorepass demopwd -destkeypass demopwd
  
  
-openssl pkcs12 -in demo.pfx -nocerts -nodes -out demo.key
 
 
 
-key,err:=readPrivateKey();
-
-err=apk.SignApk("xx.apk","xxsigned.apk",key);
+err=apk.SignApk("xx.apk","demo.pfx","demopwd","xxsigned.apk");
 
 if(err!=nil){
    fmt.Printf("err2:%v\r\n",err);

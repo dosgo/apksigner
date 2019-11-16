@@ -1,12 +1,13 @@
 package apk
 
 import (
-	"apksigner/cert"
 	"archive/zip"
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
+	"github.com/fullsailor/pkcs7"
+	"golang.org/x/crypto/pkcs12"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -17,12 +18,14 @@ import (
 	"strings"
 )
 
+
+
 /*
  apk   apk file path
  outapkfile out apk file path
  priv privateKey
 */
-func SignApk(putApkFile string,outApkFile string,priv  *rsa.PrivateKey) (err error){
+func SignApk(putApkFile string,pfxFile string,pfxPwd string,outApkFile string) (err error){
 
 	//tmep path
 	tmpPath,err:=ioutil.TempDir("","apksigned");
@@ -116,7 +119,7 @@ func SignApk(putApkFile string,outApkFile string,priv  *rsa.PrivateKey) (err err
 	sfByte, err := ioutil.ReadFile(sfName)
 
 	//签名生成RSA文件
-	rsa, err := cert.SignPKCS7(rand.Reader, priv, sfByte)
+	rsa, err := signPKCS7(rand.Reader, pfxFile, pfxPwd,sfByte)
 	if err != nil {
 		return fmt.Errorf("apk: %v", err)
 	}
@@ -208,4 +211,46 @@ func addApk(offset int64,fName string,rc io.ReadCloser, w *zip.Writer)(int64,err
 	}
 	rc.Close()
 	return offset+tempOffSet,nil;
+}
+
+
+func signPKCS7(rand io.Reader,pfxfile string, password string, msg []byte) ([]byte, error) {
+
+	p12Byte, err := ioutil.ReadFile(pfxfile)
+	if err != nil {
+		return nil,err;
+	}
+
+	priv, cert, err := pkcs12.Decode(p12Byte, password)
+	if err != nil {
+		return nil,err;
+	}
+
+	if err := priv.(*rsa.PrivateKey).Validate(); err != nil {
+		return nil,err;
+	}
+
+
+	// Initialize a SignedData struct with content to be signed
+	signedData, err := pkcs7.NewSignedData(msg)
+	if err != nil {
+		return nil,err;
+	}
+
+	// Add the signing cert and private key
+	if err := signedData.AddSigner(cert, priv, pkcs7.SignerInfoConfig{}); err != nil {
+		return nil,err;
+	}
+
+	// Call Detach() is you want to remove content from the signature
+	// and generate an S/MIME detached signature
+	signedData.Detach()
+
+	// Finish() to obtain the signature bytes
+	detachedSignature, err := signedData.Finish()
+	if err != nil {
+		return nil,err;
+	}
+
+	return detachedSignature,nil;
 }
